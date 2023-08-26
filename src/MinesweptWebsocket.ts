@@ -1,13 +1,12 @@
 import { WebSocketServer } from 'ws';
 
-class MinesweptServer extends WebSocketServer {
+class MinesweptServer {
     ws: WebSocketServer;
     
-    connections: Map<number, any>;
-    games: Map<number, Game>;
+    connections: { [key: string]: Player };
+    games: { [key: number]: Game };
 
     constructor(port: number) {
-        super();
         this.ws = new WebSocketServer({
             port,
             perMessageDeflate: {
@@ -27,6 +26,10 @@ class MinesweptServer extends WebSocketServer {
             },
             maxPayload: 2097152,
           });
+        console.log("Websocket running on port 3000");
+
+        this.connections = {};
+        this.games = {};
     }
 
     createGame(owner: string, gameMode: string): number {
@@ -37,7 +40,8 @@ class MinesweptServer extends WebSocketServer {
             gameMode,
             host: owner, 
             players: [],
-            state: GameState.LOBBY
+            state: GameState.LOBBY,
+            field: []
         }
 
         this.games[gameId] = game;
@@ -45,21 +49,39 @@ class MinesweptServer extends WebSocketServer {
         return gameId;
     }
 
+    getGame(gameId: number): any {
+        if(!this.games.hasOwnProperty(gameId)) return null;
+        return this.games[gameId];
+    }
+
+    getPlayer(uuid: string): any {
+        if(!this.connections.hasOwnProperty(uuid)) return null;
+        return this.connections[uuid];
+    }
+
     broadcastMessage = (gameId: number, sender: string, message: string) => {
-        this.games[gameId].players.forEach(uuid => {
+        this.games[gameId].players.forEach((uuid: string) => {
             if(uuid != sender)
-                this.connections[uuid].send(message);
+                this.connections[uuid].conn.send(message);
         });
     }
     
 }
 
+//TODO: make classes? "migrate" to classes not types (as these arent really enforcing, just compiletime things)
 type Game = {
     gameId: number,
     gameMode: string,
     host: string,
     players: string[],
-    state: GameState
+    state: GameState,
+    field: any
+}
+
+type Player = {
+    conn: any,
+    uuid: string,
+    gameId: number
 }
 
 enum GameState {
