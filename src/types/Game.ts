@@ -4,16 +4,18 @@ interface IGame {
     host: string,
     players: string[],
     state: GameState,
-    field: any
+    field: any,
+    progress: number[];
 }
 
 class Game implements IGame {
-    gameId: number
-    gameMode: string
-    host: string
-    players: string[]
-    state: GameState
-    field: any
+    gameId: number;
+    gameMode: string;
+    host: string;
+    players: string[];
+    state: GameState;
+    field: any;
+    progress: number[];
 
     constructor(gameId: number, gameMode: string, host: string) {
         this.gameId = gameId;
@@ -21,6 +23,7 @@ class Game implements IGame {
         this.host = host;
         this.players = [];
         this.state = GameState.LOBBY; // Games should always start in lobby
+        this.progress = []; // this is awful TODO: Change this to server based game!!!!
     } 
 }
 

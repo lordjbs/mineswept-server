@@ -46,7 +46,7 @@ const handleEvent = (conn: any, uuid: string, message: Event, data: { [key: stri
 
             // Request a field 
             var game = ms.getGame(data["gameId"]);
-            if(game.owner != uuid) return conn.send({success: false, type: "startGame", message: "Player is not the host"});
+            if(game.host != uuid) return conn.send({success: false, type: "startGame", message: "Player is not the host"});
             
             ms.getPlayer(game.host).conn.send(JSON.stringify({type: "request", requestType: "field"}));
             
@@ -73,7 +73,7 @@ const handleEvent = (conn: any, uuid: string, message: Event, data: { [key: stri
 
             ms.games[gameToJoin].players.push(uuid);
             ms.connections[uuid].gameId = gameToJoin;
-            conn.send(JSON.stringify({success: true, type: "joinGame", field: ms.games[gameToJoin].field}));
+            conn.send(JSON.stringify({success: true, type: "joinGame", field: ms.games[gameToJoin].field, progress: ms.games[gameToJoin].progress}));
 
             break;
 
@@ -83,7 +83,7 @@ const handleEvent = (conn: any, uuid: string, message: Event, data: { [key: stri
             if(player.gameId == null || data["gameId"] == null) return conn.send(JSON.stringify({success: false, type: "gameField", message: "Player is not in a game"}));
             
             var game = ms.getGame(data["gameId"]);
-            if(game.owner != uuid) return conn.send(JSON.stringify({success: false, type: "gameField", message: "Player is not the host"}));
+            if(game.host != uuid) return conn.send(JSON.stringify({success: false, type: "gameField", message: "Player is not the host"}));
             
             ms.games[data["gameId"]].field = data["field"];
             conn.send(JSON.stringify({success: true, type: "gameField"}));
@@ -103,13 +103,15 @@ const handleEvent = (conn: any, uuid: string, message: Event, data: { [key: stri
             break;
         
         case "fieldClick":
-            ms.broadcastMessage(ms.getPlayer(uuid).gameId, uuid, JSON.stringify({type: "fieldClick", field: data["field"], uuid}));
+            var gameId = (ms.getPlayer(uuid) as Player).gameId; //Null check? Player should exist
+            ms.broadcastMessage(gameId, uuid, JSON.stringify({type: "fieldClick", field: data["field"], uuid}));
 
+            ms.games[gameId].progress.push(data["field"]);
             break;
         
         case "mouseMove":
             ms.broadcastMessage(ms.getPlayer(uuid).gameId, uuid, JSON.stringify({type: "mouseMove", x: data["x"], y: data["y"], uuid}));
-            
+
             break;
     }
 }
