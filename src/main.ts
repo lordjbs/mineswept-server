@@ -105,7 +105,7 @@ const handleEvent = (conn: WebSocket, uuid: string, message: Event, data: { [key
         
         case "fieldClick":
             var gameId = (ms.getPlayer(uuid) as Player).gameId; //Null check? Player should exist
-            ms.broadcastMessage(gameId, uuid, JSON.stringify({type: "fieldClick", field: data["field"], uuid}));
+            ms.broadcastMessage(gameId, uuid, JSON.stringify({type: "fieldClick", field: data["field"], action: data["action"], uuid}));
 
             ms.games[gameId].progress.push(data["field"]);
             break;
