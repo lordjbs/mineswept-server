@@ -1,6 +1,7 @@
 import { MinesweptServer } from './types/MinesweptWebsocket';
 import { Game, GameState } from './types/Game';
 import { Player } from './types/Player';
+import { type WebSocket } from 'ws';
 
 const ms = new MinesweptServer(3000);
 
@@ -26,7 +27,7 @@ ms.ws.on('connection', (conn: any) => {
     });
 });
 
-const handleEvent = (conn: any, uuid: string, message: Event, data: { [key: string]: any } ) => {
+const handleEvent = (conn: WebSocket, uuid: string, message: Event, data: { [key: string]: any } ) => {
 
     //TODO: Add checks for json fields. For testing/beta we just expect the client to send the proper fields.
     switch(data["type"]) {
@@ -42,11 +43,11 @@ const handleEvent = (conn: any, uuid: string, message: Event, data: { [key: stri
         case "startGame": 
             // First start is only host
             var player = ms.getPlayer(uuid); // No null check needed as player should exist
-            if(player.gameId == null) return conn.send({success: false, type: "startGame", message: "Player is not in a game"});
+            if(player.gameId == null) return conn.send(JSON.stringify({success: false, type: "startGame", message: "Player is not in a game"}));
 
             // Request a field 
             var game = ms.getGame(data["gameId"]);
-            if(game.host != uuid) return conn.send({success: false, type: "startGame", message: "Player is not the host"});
+            if(game.host != uuid) return conn.send(JSON.stringify({success: false, type: "startGame", message: "Player is not the host"}));
             
             ms.getPlayer(game.host).conn.send(JSON.stringify({type: "request", requestType: "field"}));
             
