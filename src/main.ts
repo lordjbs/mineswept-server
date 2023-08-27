@@ -98,12 +98,11 @@ const handleEvent = (conn: any, uuid: string, message: Event, data: { [key: stri
             break;
         
         case "fieldClick":
-            ms.broadcastMessage(ms.getPlayer(uuid).gameId, uuid, JSON.stringify({type: "fieldClick", field: data["field"]}));
+            ms.broadcastMessage(ms.getPlayer(uuid).gameId, uuid, JSON.stringify({type: "fieldClick", field: data["field"], uuid}));
             break;
         
         case "mouseMove":
-            ms.broadcastMessage(ms.getPlayer(uuid).gameId, uuid, JSON.stringify({type: "mouseMove", x: data["x"], y: data["y"]}));
+            ms.broadcastMessage(ms.getPlayer(uuid).gameId, uuid, JSON.stringify({type: "mouseMove", x: data["x"], y: data["y"], uuid}));
             break;
-        
     }
 }
