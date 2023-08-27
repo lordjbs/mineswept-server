@@ -1,14 +1,15 @@
-import { MinesweptServer, GameState } from './MinesweptWebsocket';
-import {v4 as uuidv4} from 'uuid';
+import { MinesweptServer } from './types/MinesweptWebsocket';
+import { Game, GameState } from './types/Game';
+import { Player } from './types/Player';
 
 const ms = new MinesweptServer(3000);
 
 ms.ws.on('connection', (conn: any) => {
 
-    const uuid: string = uuidv4();
-    ms.connections[uuid] = {conn, uuid, gameId: 0};
+    const player = new Player(conn);
+    ms.connections[player.uuid] = player;
 
-    conn.send(JSON.stringify({connected: true, uuid}));
+    conn.send(JSON.stringify({connected: true, uuid: player.uuid}));
 
     conn.on("message", (message: MessageEvent) => {
         // Parse message
@@ -21,7 +22,7 @@ ms.ws.on('connection', (conn: any) => {
             return;
         }
 
-        handleEvent(conn, uuid, message, data);
+        handleEvent(conn, player.uuid, message, data);
     });
 });
 
@@ -35,6 +36,7 @@ const handleEvent = (conn: any, uuid: string, message: Event, data: { [key: stri
             
             ms.connections[uuid].gameId = gameId;
             ms.games[gameId].players.push(uuid);
+
             break;
         
         case "startGame": 
@@ -61,6 +63,7 @@ const handleEvent = (conn: any, uuid: string, message: Event, data: { [key: stri
             ms.getPlayer(game.host).conn.send(JSON.stringify({type: "request", requestType: "field"}));
 
             ms.games[gameId].state = GameState.INGAME;
+
             break;
 
         case "joinGame": 
@@ -71,6 +74,7 @@ const handleEvent = (conn: any, uuid: string, message: Event, data: { [key: stri
             ms.games[gameToJoin].players.push(uuid);
             ms.connections[uuid].gameId = gameToJoin;
             conn.send(JSON.stringify({success: true, type: "joinGame", field: ms.games[gameToJoin].field}));
+
             break;
 
         case "gameField":
@@ -86,11 +90,12 @@ const handleEvent = (conn: any, uuid: string, message: Event, data: { [key: stri
 
             if(data["remake"] == true)
                 ms.broadcastMessage(ms.getPlayer(uuid).gameId, uuid, JSON.stringify({type: "remakeGame", field: data["field"]}));
+
             break;
 
         case "gameEnd":
-            const _gameId = ms.getPlayer(uuid).gameId;
-            ms.games[_gameId].state = GameState.ENDED;
+            var gameId = (ms.getPlayer(uuid) as Player).gameId; //Null check? Player should exist
+            ms.games[gameId].state = GameState.ENDED;
 
             // Add success or failure? Client handled?
             ms.broadcastMessage(ms.getPlayer(uuid).gameId, uuid, JSON.stringify({type: "gameEnd"}));
@@ -99,10 +104,12 @@ const handleEvent = (conn: any, uuid: string, message: Event, data: { [key: stri
         
         case "fieldClick":
             ms.broadcastMessage(ms.getPlayer(uuid).gameId, uuid, JSON.stringify({type: "fieldClick", field: data["field"], uuid}));
+
             break;
         
         case "mouseMove":
             ms.broadcastMessage(ms.getPlayer(uuid).gameId, uuid, JSON.stringify({type: "mouseMove", x: data["x"], y: data["y"], uuid}));
+            
             break;
     }
 }
